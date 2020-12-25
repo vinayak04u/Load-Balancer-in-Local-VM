@@ -1,0 +1,115 @@
+- hosts: lb
+  tasks:
+    - mount:
+        src: "/dev/cdrom"
+        path: "/dev1"
+        fstype: iso9660
+        state: mounted
+
+    - yum_repository:
+        baseurl: "/dev1/AppStream"
+        name: "dvd1"
+        gpgcheck: no
+        description: "Dvd Appsteam"
+
+    - yum_repository:
+        baseurl: "/dev1/BaseOS"
+        name: "dvd2"
+        gpgcheck: no
+        description: "Dvd Appsteam"
+
+    - package: 
+        name: "haproxy"
+        state: present
+
+    - template:
+        src: "haproxy.cfg"
+        dest: "/etc/haproxy/haproxy.cfg"
+      notify: haproxyservice
+
+    - firewalld:
+        port: 5000/tcp
+        immediate: yes
+        permanent: yes
+        state: enabled
+    - firewalld:
+        port: 80/tcp
+        immediate: yes
+        permanent: yes
+        state: enabled
+
+- hosts: web
+  tasks:
+
+   - replace:
+        path: "/etc/httpd/conf/httpd.conf"
+        regexp: "AllowOverride None"
+        replace: "AllowOverride AuthConfig"
+
+   - copy:
+        dest: "/var/www/html/"
+        src: "/.htaccess"
+
+   - pip:
+        name: "passlib"
+
+   - htpasswd:
+        path: "/etc/www.passwd"
+        username: "vinayak"
+        password: "kumar321"
+
+   - package:
+        name: "php"
+        state: present
+
+   - package:
+        name: "httpd"
+        state: present
+
+   - copy:
+        src: "file/myhtml.php"
+        dest: "/var/www/html/"
+     notify: httpdservice
+
+
+   - firewalld:
+        port: 80/tcp
+        immediate: yes
+        permanent: yes
+        state: enabled
+- hosts: normal
+  tasks:
+
+    - mount:
+        src: "/dev/cdrom"
+        path: "/dev1"
+        fstype: iso9660
+        state: mounted
+
+    - yum_repository:
+        baseurl: "/dev1/AppStream"
+        name: "dvd1"
+        gpgcheck: no
+        description: "Dvd Appsteam"
+
+    - yum_repository:
+        baseurl: "/dev1/BaseOS"
+        name: "dvd2"
+        gpgcheck: no
+        description: "Dvd Appsteam"
+
+
+
+  handlers:
+  - name: haproxyservice  
+    service:
+        name: "haproxy"
+        state: restarted
+  
+  - name: httpdservice
+    service:
+        name: "httpd"
+        state: restarted
+
+
+
