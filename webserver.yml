@@ -21,11 +21,11 @@
     - package: 
         name: "haproxy"
         state: present
+      notify: haproxyservice
 
     - template:
         src: "haproxy.cfg"
         dest: "/etc/haproxy/haproxy.cfg"
-      notify: haproxyservice
 
     - firewalld:
         port: 5000/tcp
@@ -41,6 +41,10 @@
 - hosts: web
   tasks:
 
+   - package:
+        name: "httpd"
+        state: present
+
    - replace:
         path: "/etc/httpd/conf/httpd.conf"
         regexp: "AllowOverride None"
@@ -49,6 +53,7 @@
    - copy:
         dest: "/var/www/html/"
         src: "/.htaccess"
+     notify: httpdservice
 
    - pip:
         name: "passlib"
@@ -62,14 +67,11 @@
         name: "php"
         state: present
 
-   - package:
-        name: "httpd"
-        state: present
 
    - copy:
         src: "file/myhtml.php"
-        dest: "/var/www/html/"
-     notify: httpdservice
+        dest: "/var/www/html/myhtml.php"
+
 
 
    - firewalld:
@@ -110,6 +112,9 @@
     service:
         name: "httpd"
         state: restarted
+
+
+
 
 
 
